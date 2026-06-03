@@ -143,10 +143,34 @@ function Hero() {
 
 /* ---------------- Marquee ---------------- */
 function Marquee({ words, duration }) {
-  const items = [...words, ...words];
+  const trackRef = useRef(null);
+  const rafRef = useRef(null);
+  const posRef = useRef(0);
+  const items = [...words, ...words, ...words, ...words];
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const halfW = track.scrollWidth / 2;
+    const pxPerSec = halfW / duration;
+
+    let last = null;
+    const step = (ts) => {
+      if (last !== null) {
+        posRef.current += pxPerSec * ((ts - last) / 1000);
+        if (posRef.current >= halfW) posRef.current -= halfW;
+        track.style.transform = `translateX(-${posRef.current}px)`;
+      }
+      last = ts;
+      rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [duration]);
+
   return (
     <div className="marquee">
-      <div className="marquee-track" style={{ '--marquee-duration': `${duration}s` }}>
+      <div className="marquee-track" ref={trackRef} style={{ animation: 'none', willChange: 'transform' }}>
         {items.map((w, i) => (
           <span key={i} className={`marquee-item ${i % 3 === 1 ? 'outlined' : ''}`}>
             {w}
